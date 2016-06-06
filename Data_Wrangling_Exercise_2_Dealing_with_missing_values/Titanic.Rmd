@@ -1,0 +1,137 @@
+---
+#title: "Exercise2_DataScienceCourse_Titanic"
+#author: "andreafernandes"
+#date: "8 March 2016"
+#output: html_document
+---
+
+******
+
+# Data Wrangling Exercise 2: Dealing with missing values
+
+******
+
+##### Project Link: https%3A//github.com/andreafernandes/Springboard_Data_Science_Course_2016
+
+******
+
+In this exercise, you'll work with one of the most popular starter data sets in data science, the Titanic data set. This is a data set that records various attributes of passengers on the Titanic, including who survived and who didn’t.
+
+
+******
+
+```{r Chunk 1, echo = TRUE, results = "hide", message = FALSE, warning = FALSE}
+# command to clear old history - always do this
+rm(list=ls())
+gc()
+setwd("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/Data_Wrangling_Exercise_2_Dealing_with_missing_values/")
+
+library(foreign)
+library("dplyr", lib.loc="/usr/local/lib/R/3.2/site-library")
+
+#reading raw csv table
+titanic_df =  read.csv("./titanic3.csv", na.strings=c("NA","NULL"))
+
+str(titanic_df)
+```
+
+```{r Chunk 1.1, echo = TRUE, message = FALSE, warning = FALSE}
+data.frame(head(titanic_df))
+```
+
+******
+
+__1: Port of embarkation__
+
+The embarked column has one missing value, which is known to correspond to a passenger who actually embarked at Southampton. Find the missing value and replace it with S.
+
+```{r Chunk 2, echo = TRUE, results = "hide", message = FALSE, warning = FALSE}
+names(titanic_df)
+table(titanic_df$embarked)
+which(titanic_df$embarked == "")
+
+titanic_df <- titanic_df %>% mutate(embarked = ifelse(embarked %in% "S", "S",
+                                               ifelse(embarked %in% "C", "C",
+                                               ifelse(embarked %in% "Q", "Q",
+                                               ifelse(embarked %in% "", "S", NA)))))
+
+```
+
+```{r Chunk 2.1, echo = TRUE, message = FALSE, warning = FALSE}
+table(is.na(titanic_df$embarked)) # 0 na values
+```
+
+******
+
+__2: Age__
+
+You’ll notice that a lot of the values in the Age column are missing. While there are many ways to fill these missing values, using the mean or median of the rest of the values is quite common in such cases.
+
+    Calculate the mean of the Age column and use that value to populate the missing values
+    Think about other ways you could have populated the missing values in the age column. 
+    Why would you pick any of those over the mean (or not)?
+    
+```{r Chunk 3, echo = TRUE, results = "hide", warning=FALSE, message=FALSE}
+table(titanic_df$age)
+table(is.na(titanic_df$age)) #264 NA values
+
+meanofAge <-mean(titanic_df$age, trim = 0.5, na.rm = TRUE)
+meanofAge #28
+
+#titanic_df <- replace_na(titanic_df, replace = list(age = 28))
+
+titanic_df$age[titanic_df$age==28] <- NA 
+```
+
+```{r Chunk 3.1, echo = TRUE, warning=FALSE, message=FALSE}
+table(is.na(titanic_df$age)) # 0 na values (no TRUE values)
+```
+
+******
+
+__3: Lifeboat__
+
+You’re interested in looking at the distribution of passengers in different lifeboats, but as we know, many passengers did not make it to a boat :-( This means that there are a lot of missing values in the boat column. Fill these empty slots with a dummy value e.g. NA
+
+
+```{r Chunk 4, results = "hide", echo = TRUE, warning = FALSE, message = FALSE}
+names(titanic_df)
+table(titanic_df$boat)
+table(is.na(titanic_df$boat))
+titanic_df$boat[titanic_df$boat==""] <- NA 
+```
+
+```{r Chunk 4.1, echo = TRUE, warning = FALSE, message = FALSE}
+table(is.na(titanic_df$boat))
+```
+
+******
+
+__4. Cabin__
+
+You notice that many passengers don’t have a cabin number associated with them.
+
+    Does it make sense to fill missing cabin numbers with a value?
+    What does a missing value here mean?
+
+You have a hunch that the fact that the cabin number is missing might be a useful indicator of survival. Create a new column has_cabin_number which has 1 if there is a cabin number, and 0 otherwise.
+
+```{r Chunk 5, echo = TRUE, results = "hide", warning = FALSE, message = FALSE}
+titanic_df$cabin
+table(is.na(titanic_df$cabin))
+
+titanic_df <- titanic_df %>% mutate(has_cabin_number = ifelse(cabin %in% "", 0, 1))
+titanic_df$has_cabin_number
+```
+
+```{r Chunk 5.1, echo = TRUE, message = FALSE, warning=FALSE}
+titanic_df[1:20, c("has_cabin_number", "cabin")]
+```
+
+******
+
+
+5. Writing to CSV
+```{r}
+write.csv(titanic_df, file = "./titanic_clean.csv")
+```
