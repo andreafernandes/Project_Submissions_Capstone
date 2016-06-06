@@ -1,0 +1,314 @@
+---
+title: "Lesson3_Notes"
+author: "andreafernandes"
+date: "27 March 2016"
+output: html_document
+---
+
+******
+
+####Miscellaneous Notes and Codes written to Paste on Udacity Exercises in Lesson 3 
+
+Here's the link: 
+
+https://www.udacity.com/course/viewer#!/c-ud651/l-755618712/e-814098658/m-814098660
+
+
+Setting data and Loading pseudo-facebook data
+```{r, Chunk A, warning=FALSE, message=FALSE, comment=FALSE}
+rm(list=ls())
+gc()
+
+setwd("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/Lesson3_EDA/1_Lesson3_EDA/")
+
+pf <- read.table("./pseudo_facebook.tsv", sep="\t", header = TRUE)
+
+#names(pf)
+```
+
+
+******
+
+Friend count by gender
+```{r Chunk B, warning=FALSE, message=FALSE, comment=FALSE}
+suppressPackageStartupMessages(library("ggplot2", lib.loc="/usr/local/lib/R/3.2/site-library"))
+
+qplot(x = friend_count, data = pf, binwidth = 25) +
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 50)) + 
+  facet_wrap(~gender)
+
+#ggsave("Friend_Count_by_Gender.png", last_plot())
+```
+
+Summary: 
+
+These histograms are a count of fb users with friends ranging from 0 to 1000. The histogram shows more male fb users have 0 friends compared to women. More male fb users have 1 friend comapred to female fb users. It is still hard to interpret the histograms and determine which gender has more friends.
+
+There is also an NA gender category, which needs to be appropriately excluded from analysis. 
+
+
+To give a clearer picture of which gender has more fb friends, numerical summaries can be used, such as below:
+
+```{r Chunk C, warning=FALSE, message=FALSE, comment=FALSE}
+by(pf$friend_count, pf$gender, summary)
+```
+
+******
+
+Duration on FB (tenure)
+```{r Chunk D, warning=FALSE, message=FALSE, comment=FALSE}
+qplot(x = tenure/365.25, data = pf, binwidth = 0.25,  color = I('white'), fill = I('#FF0000')) + 
+      scale_x_continuous(lim = c(0, 7.5), breaks = seq(0, 8, 1))
+
+#ggsave("Duration_on_FB.png", last_plot())
+```
+
+Summary: 
+
+There are more people with shorter duration as members of fb than those with longer tenure. 
+
+******
+
+The above histogram (count of duration on fb) can be further explored by age...
+
+But first is a histogram of fb users by age
+```{r Chunk E, warning=FALSE, message=FALSE, comment=FALSE}
+qplot(x = age, data = pf, 
+      xlab = "Age of Users", 
+      binwidth = 1, 
+      color = I('white'), fill = I('#FF0000')) + 
+  scale_x_continuous(lim = c(10, 100), breaks = seq(10, 100, 5))
+
+
+#ggsave("AgeofFBusers.png", last_plot())
+```
+
+Summary: 
+
+There are more younger aged fb user than older aged fb users. 
+
+******
+
+Tenure by age
+```{r Chunk E1}
+ggplot(aes(x = age, y = tenure/365.25), data = pf,  color = I('white'), fill = I('#FF0000')) + 
+      geom_jitter(alpha =  1/20) +
+      scale_y_continuous(lim = c(0, 7.5), breaks = seq(0, 8, 1))
+```
+
+Summary:
+
+This scatter plot shows that there are many more younger age groups (13 to ~30 years) who have been a fb member for 1 to 2 years compared to older age groups. 
+
+There are an unusally higher number of people who are above 90 years old who have a been a fb user from 0 to 7 years. This could be anonmalies or bad extreme data. 
+
+There seems to be a consistent spread of users who have been members of fb for over 3 years. 
+
+
+******
+
+Arranging grid next to each other: USEFUL code!
+```{r Chunk F, warning=FALSE, message=FALSE, comment=FALSE}
+library("gridExtra", lib.loc="/usr/local/lib/R/3.2/site-library")
+library("grid", lib.loc="/usr/local/Cellar/r/3.2.2_1/R.framework/Versions/3.2/Resources/library")
+
+table(pf$friend_count)
+# define individual plots
+p1 <- qplot(x = friend_count, data = pf, binwidth = 50, color = I('white'), fill = I('#FF0000')) 
+
+p2 <- qplot(x = log10(friend_count + 1), data = pf, binwidth = 0.1, color = I('white'), fill = I('#CC8C3C')) 
+
+p3 <- qplot(x = sqrt(friend_count), data = pf, binwidth = 1, color = I('white'), fill = I('#F79421'))
+
+# arrange plots in grid
+grid.arrange(p1, p2, p3, ncol=1)
+
+
+p4 <- qplot(x = friend_count, data = pf, binwidth = 50, color = I('white'), fill = I('#FF0000')) 
+
+p5 <- qplot(x = friend_count, data = pf, binwidth = 0.1, color = I('white'), fill = I('#CC8C3C'))  + scale_x_log10()
+
+p6 <- qplot(x = friend_count, data = pf, binwidth = 1, color = I('white'), fill = I('#F79421'))  + scale_x_sqrt()
+grid.arrange(p4, p5, p6, ncol=1)
+
+#ggsave("GridArrange.png", last_plot())
+```
+
+
+******
+
+**Transforming the distribution to normalise it**
+
+```{r Chunk G, warning=FALSE, message=FALSE, comment=FALSE}
+#frequency polygon
+
+#str(pf)
+
+by(pf$www_likes, pf$gender, summary)
+
+```
+It is clear from the summary that this is a non normal distribution with a long tail (Highly "over dispersed" data). 
+
+The summary also shows that for both genders, 50% of users give no www_likes. 
+
+******
+
+Number of Likes by Gender
+
+Demo of the original plot, with no changes.
+```{r Chunk G1, warning=FALSE, message=FALSE, comment=FALSE}
+p7 <- qplot(x = www_likes, data = subset(pf, !is.na(gender)), 
+            binwidth = 5, 
+            color = I('white'), fill = I('#FF0000')) + 
+       scale_x_continuous(name = "www_likes: Original With 0 www_likes", 
+                          lim = c(0, 400), 
+                          breaks = seq(0, 400, 50)) +
+       scale_y_continuous(lim = c(0,4000), breaks = seq(0, 4000, 100)) +
+      facet_wrap(~gender)
+
+#ggsave("www_likes_all.png", last_plot())
+```
+
+Summary: 
+
+Male users get fewer likes than women. (i.e. there are more men with 0 likes than women)
+
+You can also see this in the numerical summary:
+
+```{r Chunk G1.1}
+by(pf$www_likes, pf$gender, summary)
+```
+
+Summary: 
+
+From the plot and the numerical summary, the distribution of likes is not normal (more people have 0 likes than not). 
+
+When doing regression analysis, we are assuming our distributions will be normal. In order to use non-normal distribution, we can TRANSFORM them into a normal distribution by taking the log of the x variable or the square root of the x variable (there are other ways, but these are main)  --- asked Guy question on this.
+
+******
+
+Transforming the original plot gives a normal - ish distribution.
+```{r Chunk I, warning=FALSE, message=FALSE, comment=FALSE}
+p9 <- qplot(x = www_likes, data = na.omit(pf), 
+            binwidth = 0.1, 
+            color = I('white'), fill = I('#FF0000'), 
+            xlab="www_likes: Log10 Transformed") +
+      facet_wrap(~gender) +
+      scale_x_log10()
+
+ggsave("www_likes_without_0likes_transformed.png", last_plot())
+```
+
+
+Just checking the sqrt plot (it's not as normal as log)
+```{r Chunk J, warning=FALSE, message=FALSE, comment=FALSE}
+p10 <- qplot(x = www_likes, data = na.omit(pf), 
+             binwidth = 4, 
+             color = I('white'), fill = I('#FF0000'), 
+             xlab = "www_likes: Square Root Transformed") +
+      facet_wrap(~gender) +
+      scale_x_sqrt()
+```
+
+You have to think about this a bit more and decide what type of transofmation you would like to do. 
+
+```{r Chunk K, warning=FALSE, message=FALSE, comment=FALSE}
+grid.arrange(p7, p9, p10, ncol=1)
+
+ggsave("www_likes_vs_gender.png", last_plot())
+```
+
+
+**Conclusion for exercise purposes:** Use the log10 transformed graph
+
+******
+
+**Frequency Polygon to overlay graphs**
+
+You can **overlay** two graphs using teh "freqpoly" geom function.
+
+
+Overlaying female histogram of www_likes over the male histogram of www_likes. 
+
+```{r Chunk L, warning=FALSE, message=FALSE, comment=FALSE}
+qplot(x = www_likes, data = na.omit(pf), 
+      binwidth = 0.1, 
+      geom = 'freqpoly', 
+      color = gender, 
+      xlab="www_likes: Log10 Transformed") +
+      scale_x_log10()
+```
+
+
+Just checking what the SqRt Tranformation Gender Overlay would look like. You can use this for neater looking graphs. 
+
+```{r Chunk M, warning=FALSE, message=FALSE, comment=FALSE}
+qplot(x = www_likes, data = na.omit(pf), 
+    binwidth = 4, 
+    geom = 'freqpoly', 
+    color = gender, 
+    xlab = "www_likes: Square Root Transformed") +
+      scale_x_sqrt()
+```
+
+Summary:
+
+Compared to males, females have more www_likes; more males have less likes. This still cannot tell us whether OVERALL which gender has more likes. 
+
+******
+
+To interpret the freqpoly graph, you can use a numerical summary and add up number of fb www_likes by users, by gender 
+```{r Chunk O, warning=FALSE, message=FALSE, comment=FALSE}
+#key function
+by(pf$www_likes, pf$gender, sum)
+
+```
+Summary:
+
+Females have a lot more likes than males. 
+******
+
+**Doing Boxplots:** 
+
+Friend count by gender
+```{r Chunk P, warning=FALSE, message=FALSE, comment=FALSE}
+qplot(x = gender, y = friend_count, 
+      data = subset(pf, !is.na(gender)), 
+      geom = 'boxplot') + #, ylim = c(0,1000)) +
+      scale_y_continuous(lim = c(0, 1000), breaks = seq(0, 1000, 500))
+
+#you could also use the ylim function or the coord cartesian layer..
+#Coord cartesian matches the below summary stats exactly, as opposed to the scale_y_continuous or ylim.
+```
+
+Summary:
+
+This plot shows us that more females have a slightly higher friend count than males. But it's not very clear.
+Doing a numerical summary, can highlight the discrepancies in the boxplot further. 
+
+```{r Chunk P1}
+by(pf$friend_count, pf$gender, summary)
+```
+
+
+
+*******
+
+**Coord cartesian to zoom**
+
+Friend requests by gender
+```{r Chunk Q, warning=FALSE, message=FALSE, comment=FALSE}
+#str(pf)
+
+#table(is.na(pf$friendships_initiated)) #no NA
+
+by(pf$friendships_initiated, pf$gender, summary)
+by(pf$friendships_initiated, pf$gender, sum)
+
+qplot(x = gender, y = friendships_initiated, 
+      data = subset(pf, !is.na(gender)), 
+      geom = 'boxplot') + #, ylim = c(0,1000)) +
+      coord_cartesian(ylim=c(0,150))
+
+ggsave("FriendReq_byGender.png", last_plot())
+```

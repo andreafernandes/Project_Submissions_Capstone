@@ -1,0 +1,267 @@
+---
+title: "Diamonds_Part1"
+author: "andreafernandes"
+date: "29 March 2016"
+output: html_document
+---
+
+
+###Diamonds Dataset. Project Part 1
+
+####Using the diamonds dataset to practice a few EDA techniques and tools. 
+
+Working through the exercises in Problem Set 3: Exploratory Data Analysis with R
+
+
+```{r, Chunk A, echo=FALSE, results = "hide"}
+rm(list=ls())
+gc()
+
+setwd("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/Lesson3_EDA/2_Diamonds_Part1/")
+```
+
+
+******
+
+
+**Exercise 1**
+a) Load the diamonds data set in R studio (and ggplot package)
+```{r Chunk A1}
+library(ggplot2)
+data(diamonds)
+```
+
+
+b) How many observations are in the dataset?
+c) How may variables are in the data set?
+```{r Chunk B, results = "hide"}
+dim(diamonds) # 53940 obs    10 vars
+```
+
+
+d) How many ordered factors are in the data set?
+```{r Chunk C, results - "hide"}
+str(diamonds) # 3
+```
+
+e) What letter represents the best color for a diamond?
+```{r Chunk D, results = "hide"}
+table(diamonds$color) # D
+
+#More on diamonds: http://www.lumeradiamonds.com/diamond-education/index
+```
+
+
+```{r, Chunk D1, echo = FALSE, results ="hide"}
+table(diamonds$cut)
+table(diamonds$carat)
+table(is.na(diamonds$carat)) #no NA
+```
+
+A screenshot of the data:
+```{r D2, echo=FALSE}
+head(data.frame(diamonds))
+```
+
+
+
+******
+
+
+**Exercise 2**
+a) Create a histogram of the price of all the diamonds in the dataset
+```{r Chunk E, warning=FALSE}
+
+qplot(x = price, data =  diamonds, 
+      color = I('white'), fill = I('#FF0000'), 
+      binwidth =  100) + 
+      scale_x_continuous(lim = c(0, 20000), 
+                         breaks = seq(0, 20000, 500))
+```
+
+
+```{r Chunk F, echo = FALSE}
+summary(diamonds$price)
+```
+
+b) Describe the shape and center of the price distribution 
+
+        - Long tailed distribution, with a few diamonds costing 100-1000 times more than the most common price (over dispersed) 
+        - The most common prices ranges from £/$500 to 1000 
+        - Mean: 3933; Median: 2401
+        
+
+
+c) How many diamonds cost less than $500?
+```{r Chunk G, results = "hide"}
+table(diamonds$price < 500) #1729
+```
+
+
+d) How many diamonds cost less than $250?
+```{r Chunk H}
+table(diamonds$price < 250) # 0 
+```
+
+
+e) How many diamonds cost 15000 or more?
+```{r Chunk I}
+table(diamonds$price >= 15000) #1656
+```
+
+
+f) Explore the largest peak in the price histogram: 
+
+      The largest peak is between $500 and $1000 
+      
+```{r Chunk J, warning = FALSE}
+qplot(x = price, data =  diamonds, 
+      color = I('white'), fill = I('#FF0000'), 
+      binwidth =  1) + 
+      scale_x_continuous(lim = c(400, 1100), 
+                         breaks = seq(400, 1100, 50))
+
+ggsave('priceHistogram.png', last_plot())
+```
+
+Among the diamonds that cost $500 and $1000, most of them are costed at ~$600 and $800
+
+
+******
+
+**Exercise 3**
+a) Plot histograms of diamond prices by cut
+
+    Histograms 
+```{r Chunk L, echo=FALSE}
+qplot(x = price, data = diamonds, 
+      color = I('white'), fill = I('#FF0000'), 
+      binwidth =  1000) + 
+  facet_wrap(~cut)
+```
+
+
+b) Answer the questions below:
+    
+    a) Which cut has the highest priced diamond? 
+      
+    b) Which cut has the lowest priced diamond? 
+    
+    c) Which cut has the lowest median price?
+```{r Chunk M}
+by(diamonds$price, diamonds$cut, summary, digits = max(getOption('digits')))
+
+# a) Premium, b) Premium and Ideal , c) Ideal
+```
+
+c) Add a parameter to facet_wrap so that the y-axis in the histograms is not fixed. You want the y-axis to be different for each histogram.
+```{r Chunk N}
+qplot(x = price, data = diamonds, 
+      color = I('white'), fill = I('#FF0000'), 
+      binwidth =  1000) + 
+  facet_wrap(~cut, 
+             scales= "free_y")
+```
+
+
+
+d) Create a histogram of price per carat and facet it by cut. You can make adjustments to the code from the previous exercise to get started. Adjust the bin width and transform the scale of the x-axis using log10.
+```{r, Chunk O}
+
+qplot(x = price/carat, data =  diamonds, 
+      color = I('white'), fill = I('#FF0000'),
+      binwidth = 125) + 
+      facet_wrap(~cut, 
+                 scales = "free") +
+      scale_x_log10() +
+      scale_x_continuous(lim = c(1000, 15000), breaks = seq(1000, 15000, 1000))
+
+```
+
+
+
+******
+
+
+**Exercise 4**
+Investigate the price of diamonds using box plots, numerical summaries, and one of the following categorical variables: cut, clarity, or color.
+
+_Investigating Price by Color_
+
+BOXPLOT BY COLOR
+```{r Chunk P}
+
+qplot(x = color, y = price, 
+      data = subset(diamonds), 
+      geom = 'boxplot',
+      fill = color) +
+      coord_flip() +
+      scale_y_continuous(lim = c(0, 20000), breaks = seq(0, 20000, 500))
+```
+Summarising boxplot: The letter that represents the best color for a diamond is D. 
+
+      - This plot is not very informative. 
+      - Colors D to J all have similar overall ranges
+      - The price of J varies more than D; The IQR of D lies between ~$1000 and ~$4500, while the IQR of J lies between ~$1500 and $7500
+
+
+If I compare price per carat by color, this may be able to give an indication of the value of each color. So if I have one carat of color D and one carat of color J, is that the same price?
+
+```{r Chunk Q}
+qplot(x = color, y = price/carat, 
+      data = subset(diamonds), 
+      geom = 'boxplot',
+      fill = color) +
+      coord_flip() +
+      scale_y_continuous(lim = c(0, 20000), breaks = seq(0, 20000, 500))
+
+
+qplot(x = price/carat, 
+      data = diamonds,
+      binwidth = 100,
+      #geom = 'boxplot',
+      fill = color) +
+      #coord_flip() +
+      scale_y_continuous(lim = c(0, 750), breaks = seq(0, 750, 500)) + 
+      #scale_x_continuous(lim = c(0, 8000), breaks = seq(0, 8000, 500)) +       
+      facet_wrap(~color, scales = "free_x")
+```
+```{r Chunk Q1, results="hide", echo=FALSE}
+ggsave('priceHistogramByColor.png', last_plot())
+```
+Summary: These plots seems to show us a trend. 
+
+    Diamonds of color J seem to have a more normal distribution than Diamond of color D. 
+    There are more expensive diamonds of color D than there are of color J. 
+
+
+******
+
+
+**Exercise 5**
+```{r Chunk R, echo=FALSE}
+by(diamonds$price, diamonds$color, summary, digits = max(getOption('digits')))
+```
+
+******
+
+**Exercise 6**
+Investigate the weight of the diamonds (carat) using a frequency polygon. What carat size has a count greater than 2000? 
+```{r Chunk U}
+#sort(table(diamonds$carat)) # 1.01, 0.31, 0.3
+
+qplot(x = carat, data = diamonds, binwidth = 0.01, color = carat, geom = 'freqpoly') +
+      scale_x_continuous(lim = c(0, 1.4), breaks = seq(0, 1.4, 0.01)) +
+      scale_y_continuous(lim = c(0, 3000), breaks = seq(0, 3000, 1000)) + 
+      theme(legend.position = "none", axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+Summary: 
+
+This is not the most clearest way of doing this. 
+
+another way to do this (thanks Guy!)
+```{r Chunk V}
+library(dplyr)
+diamonds %>% group_by(carat) %>% summarise(count = n()) %>% filter(count >1999)
+```

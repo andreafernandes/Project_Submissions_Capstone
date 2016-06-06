@@ -1,0 +1,141 @@
+---
+title: "Birthday_Exercise"
+author: "andreafernandes"
+date: "30 March 2016"
+output: html_document
+---
+
+####Birthday Task
+Your task is to investigate the distribution of your friends' birth months and days.
+
+Here some questions you could answer:
+
+      1) How many people share your birthday? 
+      2) Which month contains the most number of birthdays?
+      3) How many birthdays are in each month?
+      4) Which day of the year has the most number of birthdays?
+      5) Do you have at least 365 friends that have birthdays on everyday of the year?
+      
+******
+
+**Slight issue**: The dob provided are all set in the year 2014. But the data processed, sets them in 2016. I will fix this!
+
+
+**Now fixed**
+******
+
+```{r Chunk A, echo=FALSE, results="hide", warning=FALSE, message=FALSE}
+rm(list=ls())
+gc()
+
+setwd("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/Lesson3_EDA/5_Birthdays/")
+
+Birthdays <- read.csv("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/Lesson3_EDA/5_Birthdays/Birthdays.csv")
+
+library(ggplot2)
+library(dplyr)
+library("lubridate", lib.loc="/usr/local/lib/R/3.2/site-library")
+```
+
+
+******
+
+
+Formatting dates: Chose to obtain at least the month and date. 
+
+The year is being weird:
+
+      "dateofbirth" will remain show the proper year (i.e.2014) if the year in "dates"" is "mm/dd/14", otherwise it is "2020"" if year in "dates" is 2014.... This has something to do with origin date. 
+      
+      I tried something to make it right..
+      
+      
+```{r Chunk B, results = "hide"}
+head(data.frame(Birthdays))
+str(Birthdays)
+bd <- Birthdays
+
+bd <- Birthdays %>% mutate(dateofbirth = as.Date(dates, format = "%m/%d")) %>%
+      mutate (dateofbirth = as.Date(dateofbirth, format = "%d/%m/%y")-(365.25*2.00011)) 
+#to make sure that all "dateofbirth" value are in the year 2014 and to deal with the origin data adding years to the variable, hence "-(365.25*2.00011)"
+```
+
+```{r Chunk B1}
+head(bd)
+```
+It looks like it worked. 
+
+******
+
+To plot date variables as a histogram, there are a few cuts that need to be made. I've tried cut date by month, week and day by adding these variables to the Birthday (bd) dataset.
+
+```{r Chunk C, message=FALSE, warning=FALSE}
+bd$Month <- as.Date(cut(bd$dateofbirth, breaks = "month"))
+bd$Week <- as.Date(cut(bd$dateofbirth, breaks = "week", start.on.monday = FALSE)) # changes weekly break point to Sunday
+bd$Day <- as.Date(cut(bd$dateofbirth, breaks = "day"))
+```           
+
+
+I can then use scale_x_date to break histogram by weeks, month or year and label by them too. 
+```{r Chunk C2}
+qplot(x = dateofbirth, color = I('white'), fill = Month, data = bd, 
+      binwidth = 1) +
+      facet_wrap(~Month, scales = "free_x")
+```
+Will need to play aorund with this a bit more. 
+
+I can now use it and numerical summaries to answer question on this database
+
+
+******
+
+
+1) How many people share your birthday?
+```{r Chunk D}
+library(dplyr)
+
+bd %>% 
+        filter(month(dateofbirth) == 8 & day(dateofbirth) == 25) %>%
+        group_by(month(dateofbirth), day(dateofbirth)) %>% summarise(count = n()) %>% data.frame()
+
+# Three birthdays on the 25th of August, 2014
+```
+
+
+2) Which month contains the most number of birthdays?
+```{r Chunk E}
+bd %>% group_by(month(dateofbirth)) %>% summarise(count = n()) %>% arrange(count) #March
+```
+
+
+3) How many birthdays are in each month? 
+```{r Chunk F} 
+bd %>% group_by(month(dateofbirth)) %>% summarise(count = n())
+```
+
+
+4) Which day of the year has the most number of birthdays? 
+
+
+```{r Chunk G1}
+qplot(x = dateofbirth, color = I('white'), fill = Month, data = bd, 
+      binwidth = 1) +
+      facet_wrap(~Month, scales = "free_x")
+
+# 5th Feb, 22nd May and 16 July
+```
+
+
+
+5) Do you have at least 365 friends that have birthdays on everyday of the year?
+```{r Chunk H}
+#See Plot -  No
+```
+
+
+
+******
+
+
+      
+      

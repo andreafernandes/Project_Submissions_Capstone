@@ -1,0 +1,98 @@
+---
+title: "GapMinder"
+author: "andreafernandes"
+date: "29 March 2016"
+output: html_document
+---
+
+
+******
+####Billionaire Database
+
+This database consists of the average age of Billionaires in the world in a four year time frame. Data is sourced from Forbes list of the World's billionaires in 2007. 
+
+******
+
+**Question to answer: Are the billionaire's of the world getting younger?**
+
+******
+
+```{r Chunk A, echo=FALSE, results="hide", message=FALSE, warning=FALSE}
+rm(list=ls())
+gc()
+
+setwd("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/Lesson3_EDA/3_GapMinder/")
+
+Billionaire <- read.csv("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/Lesson3_EDA/3_GapMinder/IndicatorAverage.csv")
+
+library(ggplot2)
+library(dplyr)
+```
+
+
+Tidying data
+      
+        i) Renaming variables
+        ii) Selecting relevant variables
+        iii) Creating an Age_Year and age variable. 
+              - Age_Year is the Year that Forbes released Billionaire age. 
+              - age is Age of Billionaire at the time of release. 
+
+```{r Chunk B,results="hide", message=FALSE}
+head(data.frame(Billionaire))
+
+table(is.na(Billionaire$X))
+
+bdatabase <- Billionaire %>% 
+                rename(Country = Average.age.of.billionaires, Age_Year2004 = X2004, Age_Year2005 = X2005, Age_Year2006 = X2006, Age_Year2007 = X2007) %>%
+                select (Age_Year2004, Age_Year2005, Age_Year2006, Age_Year2007, Country)
+```
+
+```{r Chunk C, echo=TRUE, results="hide", message=FALSE, warning=FALSE}
+library("tidyr", lib.loc="/usr/local/lib/R/3.2/site-library")
+bd <- gather(bdatabase, Age_Year, age, Age_Year2004:Age_Year2007, na.rm = FALSE) 
+```
+
+******
+
+*Plotting billionaire age distribution by each year provided by Forbes*
+
+```{r Chunk C1, echo=FALSE, message=FALSE, comment=FALSE, warning=FALSE}
+qplot(x = age, data = bd,
+      binwidth = 1,
+     # geom = "freqpoly",
+      color = I('red'), 
+      xlab = "Age Distribution") +
+      scale_x_continuous(lim = c(20, 100), breaks = c(20, 100, 10)) +
+      facet_wrap(~Age_Year)
+
+
+
+qplot(x = age, data = bd,
+      binwidth = 1,
+      geom = "freqpoly",
+      color = Age_Year, 
+      xlab = "Age Distribution") +
+      scale_x_continuous(lim = c(20, 100), breaks = c(20, 100, 10)) 
+
+#it's a messy polygram(?) but you can see a little spike in at a yonger age in 2006 compared to 2004...
+```
+
+Compared to 2004, there seems to be more younger billionaires in 2006 and 2007.
+
+*****
+
+*Numerical Summaries*
+```{r Chunk D, message=FALSE}
+#need to get rid of the zero's to get sensible summaries
+bd$age[bd$age==0] <- NA 
+
+by(bd$age, bd$Age_Year, summary)
+```
+The numerical summary shows that the minimum age in 2007 is lower compared to the minimum age in 2004. 
+
+******
+
+**Question: Are the billionaire's of the world getting younger?**  
+  
+***Answer: There seems to be younger billionaires in 2007 compared to 2004.***
