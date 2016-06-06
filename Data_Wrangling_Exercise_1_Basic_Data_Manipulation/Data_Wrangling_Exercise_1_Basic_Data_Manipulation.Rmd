@@ -1,0 +1,172 @@
+---
+title: "Data Wrangling Exercise 1: Basic Data Manipulation"
+author: "andreafernandes"
+date: "8 March 2016"
+output: html_document
+---
+
+
+# Data Wrangling Exercise 1: Basic Data Manipulation
+
+******
+
+##### Project Link: https%3A//github.com/andreafernandes/Springboard_Data_Science_Course_2016
+
+******
+
+In this exercise, you'll work with a toy data set showing product purchases from an electronics store. While the data set is small and simple, it still illustrates many of the challenges you have to address in real-world data wrangling! The data set and exercise are inspired by this blog post.
+
+******
+
+##### Getting started
+
+The data is in an Excel file here called refine.xlsx. Right away, you'll notice that the data set has a few issues:
+
+There are four brands: Philips, Akzo, Van Houten and Unilever. However, there are many different spellings and capitalizations of those names!
+
+The product code and number are combined in one column, separated by a hyphen
+
+******
+
+```{r Chunk 1, echo = TRUE, warning = FALSE, message=FALSE, results = "hide"}
+# command to clear old history - always do this
+rm(list=ls())
+gc()
+setwd("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/Data_Wrangling_Exercise_1_Basic_Data_Manipulation/")
+
+library(foreign)
+#for date management
+#http://www.r-bloggers.com/lubridate-working-with-date-and-time-in-r/
+#install.packages("lubridate")
+library(lubridate)
+#install.packages("tidyr")
+library(xlsx)
+library("ggplot2", lib.loc="/usr/local/lib/R/3.2/site-library")
+library(broom)
+library(MASS)
+#http://varianceexplained.org/r/broom-intro/
+library("dplyr", lib.loc="/usr/local/lib/R/3.2/site-library")
+library("tidyr", lib.loc="/usr/local/lib/R/3.2/site-library")
+
+#reading raw csv table
+refine_df =  read.csv("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/Data_Wrangling_Exercise_1_Basic_Data_Manipulation/refine_original.csv", na.strings=c("NA","NULL"))
+
+str(refine_df)
+```
+
+```{r Chunk 1.1, echo = TRUE, warning = FALSE, message=FALSE}
+head(data.frame(refine_df))
+```
+
+******
+
+__1: Clean up brand names__
+
+Clean up the 'company' column, so all of the misspellings of the brand names are standardized. For example, you can transform the values in the column to be: philips, akzo, van houten and unilever (all lowercase).
+
+```{r Chunk 2, echo = TRUE, results = "hide", warning = FALSE, message = FALSE}
+table(refine_df$company)
+refinetest <- refine_df %>% mutate (company = ifelse(grepl("[p][Ss]$", refine_df$company) %in% TRUE, "philips", 
+                                              ifelse(grepl("[o|0|O]$", refine_df$company) %in% TRUE, "akzo",
+                                              ifelse(grepl("^[U|u]", refine_df$company) %in% TRUE, "unilever",
+                                              ifelse(grepl("[outen]$", refine_df$company) %in% TRUE, "van houten", NA)))))
+```
+
+```{r Chunk 2.1, echo = TRUE, warning = FALSE, message = FALSE}
+table(refinetest$company)                 
+```
+
+******
+
+__2: Separate product code and number__
+
+Separate the product code and product number into separate columns i.e. add two new columns called product_code and product_number, containing the product code and number respectively.
+
+```{r Chunk 3, echo = TRUE, results = "hide", warning = FALSE}
+str(refinetest)
+head(data.frame(refinetest))
+head(data.frame(refine_df))
+table(refinetest$Product.code...number)
+
+refinetest <- refinetest %>% mutate(product_code = substr(refinetest$Product.code...number, 1, 1))
+refinetest <- refinetest %>% mutate(product_number = substr(refinetest$Product.code...number, 3, 4))
+```
+
+```{r Chunk 3.1, echo = TRUE, warning = FALSE, message = FALSE}
+head(data.frame(refinetest))
+```
+
+******
+
+__3: Add product categories__
+
+You learn that the product codes actually represent the following product categories:
+
+    p = Smartphone
+    v = TV
+    x = Laptop
+    q = Tablet
+
+In order to make the data more readable, add a column with the product category for each record.
+
+```{r Chunk 4, echo = TRUE, results = "hide", warning = FALSE}
+head(data.frame(refinetest))
+
+refinetest <- refinetest %>% mutate(product_category = ifelse(product_code %in% "p", "Smartphone",
+                                                       ifelse(product_code %in% "v", "TV",
+                                                       ifelse(product_code %in% "x", "Laptop",
+                                                       ifelse(product_code %in% "q", "Tablet", NA)))))
+```
+
+```{r Chunk 4.1, echo = TRUE, warning = FALSE}
+head(data.frame(refinetest))
+```
+
+
+__4. Add full address for geocoding__
+
+You'd like to view the customer information on a map. In order to do that, the addresses need to be in a form that can be easily geocoded. Create a new column full_address that concatenates the three address fields (address, city, country), separated by commas.
+
+```{r Chunk 5, echo = TRUE, results = "hide", warning = FALSE}
+refinetest <- unite(refinetest, full_address, address, city, country, sep = "," , remove = TRUE)
+```
+
+```{r Chunk 5.1, echo = TRUE, warning = FALSE}
+head(data.frame(refinetest))
+```
+
+******
+
+__5. Create dummy variables for company and product category__
+
+Both the company name and product category are categorical variables i.e. they take only a fixed set of values. In order to use them in further analysis you need to create dummy variables. Create dummy binary variables for each of them with the prefix company_ and product_ i.e.
+
+    Add four binary (1 or 0) columns for company: company_philips, company_akzo, company_van_houten and company_unilever
+
+    Add four binary (1 or 0) columns for product category: product_smartphone, product_tv, product_laptop and product_tablet
+
+```{r Chunk 6, echo = TRUE, results = "hide", warning = FALSE, message=FALSE}
+names(refinetest)
+
+refine_clean <- refinetest %>% mutate(company_philips = ifelse(company %in% "philips", 1, 0)) %>%
+                             mutate(company_akzo = ifelse(company %in% "akzo", 1, 0)) %>%
+                             mutate(company_van_houten = ifelse(company %in% "van houten", 1, 0)) %>%
+                             mutate(company_unilever = ifelse(company %in% "unilever", 1, 0))
+```
+
+```{r Chunk 6.1, echo = TRUE, warning = FALSE}
+data.frame(head(refinetest))
+```
+
+
+******
+
+__Saving data to csv__
+
+```{r Chunk 7, echo = TRUE, results = "hide", warning = FALSE}
+write.csv(refine_clean, file = "./refine_clean.csv")
+```
+
+
+******
+******
