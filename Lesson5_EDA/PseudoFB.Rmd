@@ -1,0 +1,110 @@
+---
+title: "Lesson5_Notes"
+author: "andreafernandes"
+date: "27 March 2016"
+output: html_document
+---
+####Miscellaneous Notes and Codes written to Paste in Exercises in Lesson 3
+
+
+Setting data and Loading data
+```{r, Chunk A, warning=FALSE, message=FALSE, comment=FALSE}
+rm(list=ls())
+gc()
+
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(lubridate))
+suppressPackageStartupMessages(library(ggplot2))
+
+setwd("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/Lesson5/")
+pf <- read.table("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/Lesson3/1_Lesson3_EDA/pseudo_facebook.tsv", sep="\t", header = TRUE)
+```
+
+Many interesting variables are derived from two or more others. 
+
+For example, we might wonder how much of a person's network on
+a service like Facebook the user actively initiated. Two users
+with the same degree (or number of friends) might be very
+different if one initiated most of those connections on the
+service, while the other initiated very few. So it could be
+useful to consider this proportion of existing friendships that
+the user initiated. This might be a good predictor of how active
+a user is compared with their peers, or other traits, such as
+personality (i.e., is this person an extrovert?).
+
+Your task is to create a new variable called 'prop_initiated'
+in the Pseudo-Facebook data set. The variable should contain
+the proportion of friendships that the user initiated.
+
+```{r Chunk B}
+pf$prop_initiated <- pf$friendships_initiated/pf$friend_count
+
+table(is.na(pf$friendships_initiated))
+table(is.na(pf$friend_count))
+table(is.na(pf$prop_initiated))
+
+# those who have 0 friend counts are going to come up as NaN values in prop_initiated
+```
+
+*******
+
+Create a line graph of the median proportion of friendships initiated ('prop_initiated') vs. tenure and color the line segment by year_joined.bucket.
+
+Recall, we created year_joined.bucket in Lesson 5 by first creating year_joined from the variable tenure.
+
+Then, we used the cut function on year_joined to create four bins or cohorts of users.
+
+ (2004, 2009]
+ (2009, 2011]
+ (2011, 2012]
+ (2012, 2014]
+
+The plot should look something like this.
+http://i.imgur.com/vNjPtDh.jpg OR this
+http://i.imgur.com/IBN1ufQ.jpg
+
+```{r Chunk C}
+pf <- pf %>% mutate (Curryear = as.Date("01/06/2014", format = "%d/%m/%y")-(365.25*5.998)) %>% 
+  mutate (year_joined = year(Curryear) - floor((tenure/365.25))) %>% 
+  mutate(year_joined.bucket= cut(year_joined, breaks=c(2004, 2009, 2011, 2012, 2014)))
+
+ggplot(aes(x = tenure, y = prop_initiated), data = pf) +
+geom_line(aes(color = year_joined.bucket), stat = 'summary', fun.y = quantile, fun.args=list(probs = 0.50))
+
+```
+
+
+******
+
+Smooth the last plot you created of prop_initiated vs tenure colored by  year_joined.bucket. You can bin together ranges of tenure or add a smoother to the plot.
+
+```{r Chunk D}
+ggplot(aes(x = 30 * round(tenure/30), y = prop_initiated), data = pf) +
+geom_line(aes(color = year_joined.bucket), stat = 'summary', fun.y = median)
+```
+
+On average, which group initiated the greatest proportion of its fb friendships? 
+
+******
+      People who joined after 2012, who had fewer days as a member of fb
+******
+
+For the group with the largest proportion of friendships initiated what is the group's average proportion of friendships initiated?
+
+##Ask Guy!!
+
+```{r Chunk E}
+by(pf$prop_initiated, pf$year_joined.bucket, summary)
+
+#0.6360 
+
+by(pf$friendships_initiated, pf$year_joined.bucket, summary)
+
+
+by(pf$friend_count, pf$year_joined.bucket, summary)
+
+pf$prop_initiated[is.na(pf$prop_initiated)] <- 0
+#~97 mean friends inititated 
+```
+
+These individuals (who joined in the year 2012 to 2014) had the lowest number of days joined to fb. This means they would have had relatively less friends (as they are new) and hence would have made relatively more friend requests. 

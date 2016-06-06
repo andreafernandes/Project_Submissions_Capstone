@@ -1,0 +1,157 @@
+---
+title: "Yoghurt"
+author: "andreafernandes"
+date: "1 April 2016"
+output: html_document
+---
+
+### Introducing the Yogurt Data Set
+Notes:
+```{r Chunk A}
+rm(list=ls())
+gc()
+
+setwd("/Users/andreafernandes/Desktop/NewTestFolder/Lesson5_EDA/Lesson5_yoghurt_EDA/")
+
+yo <- read.csv("/Users/andreafernandes/Desktop/NewTestFolder/Lesson5_EDA/Lesson5_yoghurt_EDA/yogurt.csv")
+
+str(yo)
+
+yo$id <- factor(yo$id)
+```
+***
+
+### Histograms Revisited
+Notes:
+
+```{r Histograms Revisited}
+library(ggplot2)
+
+qplot(x = price, data = yo, binwidth = 1) +
+      scale_x_continuous(lim = c(10, 70), breaks = seq(10, 70, 10))
+
+
+summary(yo$price)
+```
+
+***
+
+### Number of Purchases
+Notes:
+
+```{r Number of Purchases}
+unique(yo$price)
+
+length(unique(yo$price))
+
+
+library(tidyr)
+
+head(data.frame(yo))
+
+yo <- transform(yo, all.purchases = strawberry + blueberry + pina.colada + plain + mixed.berry)
+
+
+head(data.frame(yo))
+
+```
+
+***
+
+### Prices over Time
+Notes:
+
+```{r Prices over Time}
+
+ggplot(aes(x = time, y = price), data = yo) + 
+  geom_smooth() +
+  geom_smooth(stat = 'summary', fun.y = median) + 
+  scale_x_sqrt() 
+  #coord_cartesian(xlim = c(20, 50), ylim = c(9600, 9700))
+```
+
+***
+
+### Sampling Observations
+Notes:
+
+***
+
+### Looking at Samples of Households
+
+```{r Looking at Sample of Households}
+set.seed(4230)
+
+sample.ids <- sample(levels(yo$id), 16)
+
+
+
+
+set.seed(1234)
+
+sample.myIDs <- sample(levels(yo$id), 20)
+
+ggplot(aes(x = time, y = price),
+       data = subset(yo, id %in% sample.myIDs)) + #create a plot for every id in sample.myIDs
+       facet_wrap( ~ id) +
+       geom_line() + 
+       geom_point(aes(size = all.purchases), pch = 1)
+
+```
+
+***
+
+### The Limits of Cross Sectional Data
+Notes:
+
+***
+
+### Many Variables
+Notes:
+
+***
+
+### Scatterplot Matrix
+Notes:
+```{r}
+library(GGally)
+
+```
+
+***
+
+### Even More Variables
+Notes:
+
+***
+
+### Heat Maps
+Notes:
+
+```{r}
+nci <- read.table("nci.tsv")
+colnames(nci) <- c(1:64)
+```
+
+```{r}
+nci.long.samp <- melt(as.matrix(nci[1:200,]))
+names(nci.long.samp) <- c("gene", "case", "value")
+head(nci.long.samp)
+
+ggplot(aes(y = gene, x = case, fill = value),
+  data = nci.long.samp) +
+  geom_tile() +
+  scale_fill_gradientn(colours = colorRampPalette(c("blue", "red"))(100))
+```
+
+
+***
+
+### Analyzing Three of More Variables
+Reflection:
+
+***
+
+Click **KnitHTML** to see all of your hard work and to have an html
+page of this lesson, your answers, and your notes!
+

@@ -1,0 +1,108 @@
+---
+title: "Diamond_Part3"
+author: "andreafernandes"
+date: "7 April 2016"
+output: html_document
+---
+#### Part Three of the EDA: Diamonds Exercise
+
+```{r, Chunk A, echo=FALSE, results = "hide"}
+rm(list=ls())
+gc()
+
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(gridExtra))
+
+setwd("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/Lesson5/")
+```
+
+
+******
+
+
+a) Load the diamonds data set
+```{r Chunk A}
+head(data.frame(diamonds))
+```
+
+Create a histogram of diamond prices. Facet the histogram by diamond color and use cut to color the histogram bars.
+
+The plot should look something like this: http://i.imgur.com/b5xyrOu.jpg
+
+Note: In the link, a color palette of type 'qual' was used to color the histogram using scale_fill_brewer(type = 'qual')
+
+```{r Chunk B}
+qplot(price, data = diamonds, color = cut, fill = cut, binwidth = 100) +
+  facet_wrap(~color) 
+
+```
+
+
+******
+
+
+Create a scatterplot of diamond price vs. table and color the points by the cut of the diamond.
+
+The plot should look something like this: http://i.imgur.com/rQF9jQr.jpg
+
+```{r Chunk C}
+ggplot(aes(x = table, y = price, color = cut), data = diamonds) +
+  geom_jitter(alpha = 1/5)
+```
+
+What is the typical table range for the majority of diamonds of ideal cut?
+
+***
+      53 to 57
+***
+
+What is the typical table range for the majority of diamonds of premium cut?
+
+***
+      58 to 61
+***
+
+
+Create a scatterplot of diamond price vs. volume (x * y * z) and color the points by the clarity of diamonds. 
+
+Use scale on the y-axis to take the log10 of price. You should also
+omit the top 1% of diamond volumes from the plot.
+
+Note: Volume is a very rough approximation of a diamond's actual volume.
+
+The plot should look something like this : http://i.imgur.com/excUpea.jpg
+
+```{r Chunk D}
+ggplot(aes(x = x*y*z, y = price, color = clarity), data = diamonds) +
+geom_point(alpha = 1/5, stat = 'summary', fun.y = quantile, fun.args=list(probs = 0.99)) +
+  scale_y_log10() + 
+  scale_x_continuous(lim = c(0, 400), breaks = seq(0, 400, 50))
+```
+
+*****
+
+Summary:
+
+A better clarity (IF) diamond is cheaper than a diamond of relatively worse clarity (I1). This could be due to its rarity. The I1 diamonds are relatively less rare than diamonds of IF clarity and hence sell for large range of prices. 
+
+```{r Chunk E}
+by(diamonds$price, diamonds$clarity, summary)
+```
+
+******
+
+
+Create a scatter plot of the price/carat ratio of diamonds. The variable x should be
+assigned to cut. The points should be colored by diamond color, and the plot should be
+faceted by clarity.
+
+The plot should look something like this.
+http://i.imgur.com/YzbWkHT.jpg.
+
+```{r Chunk F}
+ggplot(aes(x = cut, y = price/carat, color = color), data = diamonds) +
+  geom_jitter() +
+  facet_wrap(~clarity) +
+  scale_color_brewer(type = 'div')
+```

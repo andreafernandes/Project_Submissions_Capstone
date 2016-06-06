@@ -1,0 +1,230 @@
+Lesson 5
+========================================================
+
+### Multivariate Data
+Notes:
+
+***
+
+### Moira Perceived Audience Size Colored by Age
+Notes:
+
+***
+
+### Third Qualitative Variable
+Notes:
+
+```{r}
+rm(list=ls())
+gc()
+
+setwd("/Users/andreafernandes/Desktop/NewTestFolder/Lesson5_EDA/")
+pf <- read.table("/Users/andreafernandes/Desktop/NewTestFolder/Lesson4_EDA/pseudo_facebook.tsv", sep="\t", header = TRUE)
+
+library(dplyr)
+```
+
+
+```{r Third Qualitative Variable}
+pf.fc_by_age_gender <- pf %>% 
+                              filter(!is.na(gender)) %>%
+                              group_by(age, gender) %>%
+                              summarise(mean_friend_count =  mean(friend_count),
+                              median_friend_count = median(friend_count),
+                              n = n()) %>%
+                              arrange(age)
+
+by(pf.fc_by_age_gender$mean_friend_count, pf.fc_by_age_gender$gender, summary)
+```
+
+***
+
+### Plotting Conditional Summaries
+Notes:
+
+```{r Plotting Conditional Summaries}
+library(ggplot2)
+
+ggplot(aes(x = age, y = median_friend_count ), 
+       data = pf.fc_by_age_gender) +
+       geom_line(aes(color = gender))
+
+```
+
+***
+
+### Thinking in Ratios
+Notes:
+```{r}
+library(reshape2)
+pf.fc_by_age_gender_wide <- dcast(pf.fc_by_age_gender,
+                                  age ~ gender,
+                                  value.var = 'median_friend_count')
+
+str(pf.fc_by_age_gender_wide)
+
+
+ggplot(aes(x = age, y = male/female), 
+       data = pf.fc_by_age_gender_wide) +
+       geom_line(colour = 'green') +
+       geom_hline(aes(yintercept=1), colour = 'blue', linetype = 2)
+
+```
+***
+
+### Wide and Long Format
+Notes:
+
+***
+
+### Reshaping Data
+Notes:
+
+```{r}
+install.packages('reshape2')
+library(reshape2)
+```
+
+
+***
+
+### Ratio Plot
+Notes:
+
+```{r Ratio Plot}
+ggplot(aes(x = age, y = male/female), 
+       data = pf.fc_by_age_gender_wide) +
+       geom_line(colour = 'green') +
+       geom_hline(aes(yintercept=1), colour = 'blue', linetype = 2)
+
+```
+
+***
+
+### Third Quantitative Variable
+Notes:
+
+```{r Third Quantitative Variable}
+str(pf)
+
+#year_joined: Year that they joined facebook
+#Current year is 2014
+#tenure is duration as fb member
+
+
+#my way 
+#pf <- pf %>% select(tenure) %>% 
+#       mutate (Curryear = as.Date("01/06/2014", format = "%d/%m/%y")-(365.25*5.998)) %>%
+#       mutate (year_joined = year(Curryear) - floor((tenure/365.25))) %>% tail()
+
+#another (more easier) way to do this. 
+
+pf$year_joined <- floor(2014 - pf$tenure/365)
+```
+
+***
+
+### Cut a Variable
+Notes:
+
+```{r Cut a Variable}
+pf <- pf %>% mutate(year_joined.bucket= cut(year_joined, 
+                                          breaks=c(2004, 2009, 2011, 2012, 2014))) 
+
+```
+
+***
+
+### Plotting it All Together
+Notes:
+
+```{r Plotting it All Together}
+ggplot(aes(x = age, y = friend_count),
+           data = subset(pf, !is.na(pf$year_joined.bucket))) +
+  geom_line(aes(color = year_joined.bucket), stat = 'summary', fun.y = median)
+```
+
+***
+
+### Plot the Grand Mean
+Notes:
+
+```{r Plot the Grand Mean}
+ggplot(aes(x = age, y = friend_count),
+           data = subset(pf, !is.na(pf$year_joined.bucket))) +
+  geom_line(aes(color = year_joined.bucket), stat = 'summary', fun.y = median) +
+  geom_line(stat = 'summary', fun.y =  mean, linetype = 2)
+```
+
+***
+
+### Friending Rate
+Notes:
+
+```{r Friending Rate}
+str(pf)
+
+pf$friend_rate <- pf$friend_count/pf$tenure
+
+
+with(subset(pf, tenure >=1, !is.na(tenure)), summary(friend_count/tenure))
+```
+
+***
+
+### Friendships Initiated
+Notes:
+
+What is the median friend rate? .2205
+
+What is the maximum friend rate? 417
+
+```{r Friendships Initiated}
+ggplot(aes(x = tenure, y = friendships_initiated/tenure),
+           data = na.omit(pf), subset(pf, tenure >= 1)) +
+  geom_smooth(aes(color = year_joined.bucket), 
+            stat = 'summary', 
+            fun.y = mean) 
+#+
+#  coord_cartesian(xlim = c(1400, 1600), ylim = c(0, 1.5))
+```
+
+***
+
+### Bias-Variance Tradeoff Revisited
+Notes: The code changing the binning is substituting x = tenure in the plotting expressions with x = 7 * round(tenure / 7), etc., binning values by the denominator in the round function and then transforming back to the natural scale with the constant in front.
+
+```{r Bias-Variance Tradeoff Revisited}
+
+ggplot(aes(x = tenure, y = friendships_initiated / tenure),
+       data = subset(pf, tenure >= 1)) +
+  geom_line(aes(color = year_joined.bucket),
+            stat = 'summary',
+            fun.y = mean)
+
+ggplot(aes(x = 7 * round(tenure / 7), y = friendships_initiated / tenure),
+       data = subset(pf, tenure > 0)) +
+  geom_line(aes(color = year_joined.bucket),
+            stat = "summary",
+            fun.y = mean)
+
+ggplot(aes(x = 30 * round(tenure / 30), y = friendships_initiated / tenure),
+       data = subset(pf, tenure > 0)) +
+  geom_line(aes(color = year_joined.bucket),
+            stat = "summary",
+            fun.y = mean)
+
+ggplot(aes(x = 90 * round(tenure / 90), y = friendships_initiated / tenure),
+       data = subset(pf, tenure > 0)) +
+  geom_line(aes(color = year_joined.bucket),
+            stat = "summary",
+            fun.y = mean)
+
+```
+
+***
+
+### Sean's NFL Fan Sentiment Study
+Notes:
+
+***

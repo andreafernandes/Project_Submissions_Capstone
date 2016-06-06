@@ -1,0 +1,317 @@
+---
+title: "Samsung database"
+author: "andreafernandes"
+date: "25 April 2016"
+output: html_document
+---
+
+******
+
+# Data Wrangling Exercise 3: Human Activity Recognition (Optional)
+
+******
+
+```{r Chunk 1, echo = FALSE, results = "hide", message = FALSE, warning = FALSE} 
+# Note: This data wrangling project is known to be a bit challenging, hence we've marked it as optional. However, we recommend you at least try it out when you're more comfortable with R later in the curriculum, since it's a good example of a messy, real-world data set that you'd encounter in a data science job.
+
+ # The goal of this project is to get you some practice in processing real world datasets using the tools and techniques you learned above. 
+
+# Using your Capstone dataset here will get you one step closer to the finish line. If for some reason (e.g. the chosen dataset is already tidy) your Capstone dataset is unsuitable, you can use the Samsung Galaxy S Smartphone dataset, available via UCI. A full description of that data is available here and also in the README file included with the data.
+
+# We give submission guidelines below assuming the UCI smartphone data set. This data set is organized in a way that makes it hard to use at first.
+
+# You will need to use several data transformation techniques to put it into a usable, tidy state.
+
+# You should create one R script called run_analysis.R that does the following:
+
+# Merges the training and the test sets to create one data set.
+
+# Extracts columns containing mean and standard deviation for each measurement (Hint: Since some feature/column names are repeated, you may need to use the make.names() function in R)
+    
+# Creates variables called ActivityLabel and ActivityName that label all observations with the corresponding activity labels and names respectively
+    
+#From the data set in step 3, creates a second, independent tidy data set with the average of each variable for each activity and each subject.
+
+# Submit:
+
+#    The tidy data set as described above
+#    A link to a Github repository with your script for performing the analysis, and 
+#    A code book that describes the variables, the data, and any transformations or work that you performed to clean up the data called CodeBook.md. 
+#    You should also include a README.md in the repo with your scripts. This repo explains how all of the scripts work and how they are connected. 
+```
+
+
+
+
+```{r Chunk 2, echo = FALSE, results = "hide", warning=FALSE, message=FALSE}
+# The experiments have been carried out with a group of 30 volunteers within an age bracket of 19-48 years. Each person performed six activities (WALKING, WALKING_UPSTAIRS, WALKING_DOWNSTAIRS, SITTING, STANDING, LAYING) wearing a smartphone (Samsung Galaxy S II) on the waist. Using its embedded accelerometer and gyroscope, we captured 3-axial linear acceleration and 3-axial angular velocity at a constant rate of 50Hz. The experiments have been video-recorded to label the data manually. The obtained dataset has been randomly partitioned into two sets, where 70% of the volunteers was selected for generating the training data and 30% the test data. 
+
+# The sensor signals (accelerometer and gyroscope) were pre-processed by applying noise filters and then sampled in fixed-width sliding windows of 2.56 sec and 50% overlap (128 readings/window). The sensor acceleration signal, which has gravitational and body motion components, was separated using a Butterworth low-pass filter into body acceleration and gravity. The gravitational force is assumed to have only low frequency components, therefore a filter with 0.3 Hz cutoff frequency was used. From each window, a vector of features was obtained by calculating variables from the time and frequency domain. See 'features_info.txt' for more details. 
+
+# For each record it is provided:
+# ======================================
+
+# - Triaxial acceleration from the accelerometer (total acceleration) and the estimated body acceleration.
+# - Triaxial Angular velocity from the gyroscope. 
+# - A 561-feature vector with time and frequency domain variables. 
+# - Its activity label. 
+# - An identifier of the subject who carried out the experiment.
+
+# The dataset includes the following files:
+# =========================================
+
+# - 'README.txt'
+
+# - 'features_info.txt': Shows information about the variables used on the feature vector.
+
+# - 'features.txt': List of all features.
+
+# - 'activity_labels.txt': Links the class labels with their activity name.
+
+# - 'train/X_train.txt': Training set.
+
+# - 'train/y_train.txt': Training labels.
+
+# - 'test/X_test.txt': Test set.
+
+# - 'test/y_test.txt': Test labels.
+
+# The following files are available for the train and test data. Their descriptions are equivalent. 
+
+# - 'train/subject_train.txt': Each row identifies the subject who performed the activity for each window sample. Its range is from 1 to 30. 
+
+# - 'train/Inertial Signals/total_acc_x_train.txt': The acceleration signal from the smartphone accelerometer X axis in standard gravity units 'g'. Every row shows a 128 element vector. The same description applies for the 'total_acc_x_train.txt' and 'total_acc_z_train.txt' files for the Y and Z axis. 
+
+# - 'train/Inertial Signals/body_acc_x_train.txt': The body acceleration signal obtained by subtracting the gravity from the total acceleration. 
+
+# - 'train/Inertial Signals/body_gyro_x_train.txt': The angular velocity vector measured by the gyroscope for each window sample. The units are radians/second. 
+
+# Notes: 
+# ======
+# - Features are normalized and bounded within [-1,1].
+# - Each feature vector is a row on the text file.
+
+
+```
+
+
+```{r Chunk 3, echo = FALSE, results = "hide", warning = FALSE, message = FALSE}
+# Feature Selection 
+# =================
+
+# The features selected for this database come from the accelerometer and gyroscope 3-axial raw signals tAcc-XYZ and tGyro-XYZ. These time domain signals (prefix 't' to denote time) were captured at a constant rate of 50 Hz. Then they were filtered using a median filter and a 3rd order low pass Butterworth filter with a corner frequency of 20 Hz to remove noise. Similarly, the acceleration signal was then separated into body and gravity acceleration signals (tBodyAcc-XYZ and tGravityAcc-XYZ) using another low pass Butterworth filter with a corner frequency of 0.3 Hz. 
+
+# Subsequently, the body linear acceleration and angular velocity were derived in time to obtain Jerk signals (tBodyAccJerk-XYZ and tBodyGyroJerk-XYZ). Also the magnitude of these three-dimensional signals were calculated using the Euclidean norm (tBodyAccMag, tGravityAccMag, tBodyAccJerkMag, tBodyGyroMag, tBodyGyroJerkMag). 
+
+# Finally a Fast Fourier Transform (FFT) was applied to some of these signals producing fBodyAcc-XYZ, fBodyAccJerk-XYZ, fBodyGyro-XYZ, fBodyAccJerkMag, fBodyGyroMag, fBodyGyroJerkMag. (Note the 'f' to indicate frequency domain signals). 
+
+# These signals were used to estimate variables of the feature vector for each pattern:  
+# '-XYZ' is used to denote 3-axial signals in the X, Y and Z directions.
+
+# The complete list of variables of each feature vector is available in 'features.txt'
+```
+
+******
+
+```{r Chunk 4, echo = FALSE, results = "hide", warning = FALSE, message = FALSE}
+rm(list = ls())
+gc()
+
+setwd("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/SamsungData/")
+
+suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(dplyr))
+```
+
+******
+
+## Reading in and Tidying the dataset
+
+******
+
+```{r Chunk 5, echo = TRUE, message = FALSE, warning = FALSE}
+
+# Reading in data
+
+y_test <- read.table("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/SamsungData/UCI HAR Dataset/test/y_test.txt",
+                 header = FALSE)
+
+subject_test <- read.table("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/SamsungData/UCI HAR Dataset/test/subject_test.txt",
+                 header = FALSE)
+
+x_test_valueII <- read.table("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/SamsungData/UCI HAR Dataset/test/X_test.txt",
+                 header = FALSE)
+
+value_headings <- read.table("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/SamsungData/UCI HAR Dataset/features.txt",
+                 header = FALSE)
+
+
+# Tidying data
+
+
+## creating column names 
+namesofcolumns <- value_headings %>% select(V2) %>% spread(V2, V2) %>% names()
+
+## (this doesn't work the first time around because of column names being identical. It comes up with 
+## Error: Duplicate identifiers for rows. So i changed the duplicate names in the features.txt file and re-saved it)
+
+
+## checking dim of original dataset before moving on
+
+dim(x_test_valueII)
+
+## assigning original dataset to dataset taht will be cleaned
+x_test_value <- x_test_valueII
+
+## assigning names to x_test_value dataset
+names(x_test_value) <- namesofcolumns
+
+## checking column names in x_test_value
+names(x_test_value)
+
+## does it have the same dim as the original x_test_value
+dim(x_test_value)
+
+##  yes. the column names number matches the columns in the dataset
+
+```
+
+```{r Chunk 5.1, echo = TRUE, warning = FALSE, message = FALSE}
+## having a look at the dataset
+
+x_test_value[1:5, 1:5]
+x_test_value[500:505, 500:505]
+```
+
+```{r Chunk 6, echo = TRUE, warning = FALSE, message = FALSE}
+names(subject_test) <- "subject_test"
+names(y_test) <- "y_test"
+test.set <- bind_cols(x_test_value, subject_test, y_test)
+
+tail(test.set)
+#Append z to y as new columns. 
+```
+
+
+```{r Chunk 7, echo = TRUE, results = "hide", warning = FALSE, message = FALSE}
+
+# repeating the steps for the training set
+
+y_train <- read.table("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/SamsungData/UCI HAR Dataset/train/y_train.txt",
+                 header = FALSE)
+
+subject_train <- read.table("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/SamsungData/UCI HAR Dataset/train/subject_train.txt",
+                 header = FALSE)
+
+x_train_valueII <- read.table("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/SamsungData/UCI HAR Dataset/train/X_train.txt",
+                 header = FALSE)
+
+value_headings <- read.table("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/SamsungData/UCI HAR Dataset/features.txt",
+                 header = FALSE)
+
+
+namesofcolumns <- value_headings %>% select(V2) %>% spread(V2, V2) %>% names()
+
+x_train_value <- x_train_valueII
+
+names(x_train_value) <- namesofcolumns
+
+names(x_train_value)
+
+dim(x_train_value)
+```
+
+```{r Chunk 7.1, echo = TRUE, warning = FALSE, message = FALSE}
+x_train_value[1:5, 1:5]
+x_train_value[500:505, 500:505]
+```
+
+******
+
+## Merging the dataset (run_analysis.R)
+
+******
+
+```{r Chunk 8, echo = TRUE, warning = FALSE, message = FALSE}
+
+# renaming column headings to match that of test set so that the train data set can be appended to the test set. 
+names(subject_train) <- "subject_test"
+names(y_train) <- "y_test"
+
+#  put the train set together (561 columns from x_train_value, 1 column from y_train and 1 column from subject_train)
+train.set <- bind_cols(x_train_value, subject_train, y_train)
+```
+
+
+```{r Chunk 8.1, echo = TRUE, warning = FALSE, message = FALSE}
+train.set[1:5, 1:5]
+```
+
+
+```{r Chunk 9, echo = TRUE, warning = FALSE, message = FALSE}
+## check if the columns are the same number and if the you still ahve the correct rows for the training and test set. 
+dim(train.set)
+dim(test.set)
+```
+
+
+```{r Chunk 9.1, echo = TRUE, warning = FALSE, message = FALSE}
+whole.set <- bind_rows(test.set, train.set)
+
+dim(whole.set)
+```
+
+
+```{r Chunk 10, echo = TRUE, results = "hide", message = FALSE, warning = FALSE}
+names(whole.set)
+
+## Extracts columns containing mean and standard deviation for each measurement (Hint: Since some feature/column names are repeated, you may need to use the make.names() function in R)
+
+whole.set %>% select(contains("mean"))
+whole.set %>% select(contains("std"))
+
+# http://www.cyberciti.biz/faq/searching-multiple-words-string-using-grep/
+filtered.set <- whole.set[ ,c("y_test", "subject_test", grep("[Mm]ean|[Ss]td", names(whole.set), value=TRUE))]
+
+
+head(filtered.set)
+```
+
+
+```{r Chunk 11}
+data.frame(head(filtered.set))
+
+# Creates variables called ActivityLabel and ActivityName that label all observations with the corresponding activity labels and names respectively
+
+filtered.set  <- filtered.set%>% mutate(ActivityName = ifelse(y_test == 1, "Walking",
+                                                                                  ifelse(y_test == 2, "Walking Upstairs", 
+                                                                                  ifelse(y_test == 3, "Walking Downstairs", 
+                                                                                  ifelse(y_test == 4, "Sitting", 
+                                                                                  ifelse(y_test == 5, "Standing",
+                                                                                  ifelse(y_test == 6, "Laying", NA))))))) %>% rename(ActivityLabel = y_test)
+```
+
+******
+
+# Final Dataframes
+
+******
+
+```{r Chunk 12, echo = TRUE, results = "hide", warning = FALSE, message = FALSE}
+
+filtered.set %>% group_by(subject_test, ActivityName) %>% summarise(count = n()) %>% data.frame()
+
+```
+
+```{r Chunk 13, echo = TRUE, warning = FALSE, message = FALSE}
+
+filtered.set %>% group_by(subject_test, ActivityName) %>% summarise(count = n()) %>% spread(ActivityName, count) %>% data.frame()
+```
+
+
+```{r Chunk 14, echo = TRUE, warning = FALSE, message = FALSE}
+#From the data set in step 3, creates a second, independent tidy data set with the average of each variable for each activity and each subject.
+
+filtered.set %>% group_by(subject_test, ActivityName) %>% summarise_each(funs(mean)) %>% head(5)
+```
+

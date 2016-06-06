@@ -1,0 +1,236 @@
+---
+title: "Corruption"
+author: "andreafernandes"
+date: "3 April 2016"
+output: html_document
+---
+
+
+
+```{r Chunk A, echo=TRUE, results="hide"}
+rm(list=ls())
+gc()
+
+
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(tidyr))
+
+setwd("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/Lesson3/4_CorruptionDataset/")
+
+```
+
+******
+
+Loading the datasets
+```{r Chunk A1, echo=TRUE, results="hide"}
+Corruption <- read.csv("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/Lesson3/4_CorruptionDataset/2015_CPI_data.csv")
+
+Corruption_past <- read.csv("/Users/andreafernandes/Desktop/Google Drive/Springboard_Data_Science_Course_2016/DataScience/Lesson3/4_CorruptionDataset/Corruption.csv")
+```
+
+******
+
+What do the datasets look like? 
+
+```{r Chunk B}
+data.frame(head(Corruption))
+
+data.frame(head(Corruption_past))
+
+```
+
+Things to do
+
+        1) Rename variables
+        2) Convert cpi in cp dataset (cpi.in.08 and cpi.in.09) to numbers comparable to cpi.in.15 (multiply by 10)
+        3) Select only certain variables from Corruption 2015 dataset and 
+        4) Merge datasets together
+      
+      
+***
+
+```{r Chunk B1}
+#Selecting key variables from Corruption 2015 dataset
+
+c <- Corruption %>% 
+          select(Country, Rank, cpi.in.15 = CPI2015, Region, World.Justice.Project.ROL, Number.of.Sources)
+
+
+
+# Renaming variables and making cpi figures comparable to 2015
+cp <- Corruption_past %>% rename(Country = X, cpi.in.08 = X2008, cpi.in.09 = X2009) %>%
+                          mutate(cpi.in.08 = cpi.in.08*10) %>% 
+                          mutate(cpi.in.09 = cpi.in.09*10)
+
+
+
+#full join datasets
+c.merge <- inner_join(c, cp)
+
+data.frame(head(c.merge))
+
+c.merge <- c.merge %>% select(Country, Region, cpi.in.08, cpi.in.09, cpi.in.15, World.Justice.Project.ROL, Number.of.Sources)
+```
+
+
+*******
+
+A little bit about the dataset: 
+
+CPI stands for Corruption Perception Index. 
+
+cpi.in.08, cpi.in.09 and cpi.in15 are all CPI scores in the year 2008, 2009 and 2015, respectively. The higher the **Score** the less the corruption
+
+_**Questions to answer to help with EDA of this dataset.** 
+
+The aim is to try and get to "know" this dataset to make an informed hypothesis for data analysis. 
+
+      1) What country has the highest corruption perception in 2008?
+      2) What country has the highest corruption preception in 2009?
+      3) Which country did the perception of corruption increase the most?
+      4) What is the World Justice Project?
+      5) Could you use it to tell you more about the corruption perceptions?
+      6) Does the number of sources affect the corruption perception you think?
+      7) What about countries like India where the corruption levels are high, how do they compare to the corruption perceptions the rest of the world?
+      
+```{r Chunk C}
+#my solution
+c.merge %>% arrange(cpi.in.08) %>% slice(1:5) 
+
+c.merge %>% arrange(cpi.in.09) %>% slice(1:5) 
+
+c.merge %>% arrange(cpi.in.15) %>% slice(1:5) 
+
+#much easier solution
+subset(c.merge, c.merge$cpi.in.08 == min(c.merge$cpi.in.08, na.rm = TRUE)) #Somalia
+
+subset(c.merge, c.merge$cpi.in.09 == min(c.merge$cpi.in.09, na.rm = TRUE)) #Somalia
+
+subset(c.merge, c.merge$cpi.in.15 == min(c.merge$cpi.in.15, na.rm = TRUE)) #Somalia
+
+```
+
+
+What's corruption perception like in the three years?
+```{r Chunk D}
+c.m <- gather(c.merge, Year, Cpi, cpi.in.08:cpi.in.15)
+
+ggplot(aes(x = Country, y = Cpi, color = Country), data = c.m) +
+  geom_bar(stat = "identity", width = 0.5) +
+  facet_grid(Year ~ Region, scales ="free_x") + 
+      theme(legend.position = "none", axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+Summary:
+
+        i) In 2008, Europe has one of the highest scores for low corruption perception; with the African and East and Central african regions having some of the lowest scores for low corruption perception. 
+        ii) The trends of CPI across the years seem to be unchanged. 
+          
+          
+The variation in CPI over the years...
+```{r Chunk E}
+qplot(x = Year, y = Cpi, data = c.m, geom = 'boxplot', color = I('white'), fill = I('#FF0000')) +
+coord_flip()
+
+```
+
+Summary
+      
+        i) In 2015, compared to 2008 and 2009 (5/6 years ago), the corruption perception improves a little bit. 
+
+
+The variation in CPI over the years by region...
+```{r Chunk E1}
+qplot(x = Year, y = Cpi, data = c.m, geom = 'boxplot', color = I('white'), fill = I('#FF0000')) +
+      coord_flip() +
+      facet_wrap(~Region)
+```
+  
+Summary:
+
+      i) Apart from Middle east and Europe (where corruption perception is positive anyway), Americas, Asia and Africa show improvement in corruption scores over the year.  
+```{r Chunk F}
+head(data.frame(c.merge))
+
+qplot(x = cpi.in.15, y = World.Justice.Project.ROL, data = c.merge) 
+  
+
+cor.test(x=c.merge$cpi.in.15, y = c.merge$World.Justice.Project.ROL, method = "pearson", conf.level = 0.95)
+```
+
+Summary
+
+      i) There is a strong correlation with Justice scores and high no corruption perception levels. 
+
+
+```{r Chunk G}
+table(c.merge$Number.of.Sources)
+
+qplot(x = cpi.in.15, data = c.merge) + facet_wrap(~Number.of.Sources)
+
+ggplot(aes(x = Country, y = cpi.in.15), data = c.merge) +
+  geom_bar(stat = "identity", width = 0.5) +
+  facet_wrap(~Number.of.Sources, scales ="free_x") + 
+      theme(legend.position = "none", axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+Summary:
+
+      i) Most countries have 7 to 8 sources to provide an overall corruption perception index. 
+      ii) Countries that require less sources or more than 8 sources are developing eastern European, African and Middle Eastern countries
+
+
+```{r Chunk G1}
+qplot(x = cpi.in.15, y = World.Justice.Project.ROL, data = c.merge) +
+  facet_wrap(~Region)
+```
+
+Summary:
+
+      i) The positive correlation between Justice score and corruption index is reflected in all regions of the world. 
+      
+```{r Chunk G2}
+qplot(x = cpi.in.15, y = World.Justice.Project.ROL, data = c.merge, color = Country) +
+  facet_grid(Region ~ Number.of.Sources, scales ="free_x") +
+  theme(legend.position = "none")
+
+```
+
+
+```{r Chunk H}
+c.merge <- c.merge %>% mutate(diff = cpi.in.15 - cpi.in.08)
+
+ggplot(aes(x = Country, y = diff, colour = I('white'), fill = I('#FF0000')), data = c.merge) +
+  geom_bar(stat = "identity", width = 0.5) +
+  facet_wrap(~Region, scales ="free_x") + 
+      theme(legend.position = "none", axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+Summary:
+  
+      i) Apart from the China outlier (this is a poor naming of Macau and mainland China), Oman seems to be the country with worsening corruption perception index...
+      ii)...While Rwanda has the most improvement in corruption perception index. See below
+      
+      
+```{r Chunk H2}
+subset(c.merge, c.merge$diff == min(c.merge$diff, na.rm = TRUE)) 
+
+subset(c.merge, c.merge$diff == max(c.merge$diff, na.rm = TRUE)) 
+
+c.merge %>% arrange(diff) %>% slice(1:5) 
+```
+
+
+
+
+
+```{r Chunk I, Miscellaneous code, echo = FALSE, results ="hide"}
+qplot(x=Country, y = CPI2015, data = Corruption, na.rm = TRUE) +
+      facet_wrap(~Region, scales = "free_x") +
+      geom_hline(aes(yintercept=0, colour = 'red')) + 
+      theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+```
